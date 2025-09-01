@@ -5,6 +5,7 @@ import { paraglideMiddleware } from '$lib/paraglide/server';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import { db } from '$lib/server/db';
 import path from 'path';
+import { _main_ } from '$lib/server/online-course/domain/course.ag';
 
 const handleParaglide: Handle = ({ event, resolve }) =>
 	paraglideMiddleware(event.request, ({ request, locale }) => {
@@ -45,6 +46,8 @@ function _init(): ServerInit {
 			console.error('Migration failed:', error);
 			process.exit(1);
 		}
+
+		_main_();
 	};
 }
 
