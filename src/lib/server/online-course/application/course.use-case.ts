@@ -11,26 +11,42 @@ import {
 import type { ICourseRepository } from '../domain/i-course.repo';
 import { MockCourseRepo } from '../infrastructure/mock-course.repo';
 
+/**
+ * CourseUseCase
+ * 應該遵循 repo > ag > ag.operation > repo 流程
+ */
 export class CourseUseCase {
 	constructor(private readonly _repo: ICourseRepository) {}
 
 	async getCourse(id: string) {
-		return this._repo.findCourse(id);
+		const found = await this._repo.findCourse(id);
+		if (!found) throw new Error('Course not found');
+		const ag = CourseAggregate.from(found.props);
+		return ag.props;
 	}
 
 	async listCourses() {
-		return this._repo.listCourses();
+		const foundList = await this._repo.listCourses();
+		const agList = foundList.map((course) => CourseAggregate.from(course.props));
+		return agList;
 	}
 
 	async createCourse(input: Omit<CourseProps, 'id' | 'createdAt'>) {
-		const course = CourseAggregate.create(input);
-		await this._repo.saveCourse(course);
-		return course;
+		const ag = CourseAggregate.create(input);
+		await this._repo.saveCourse(ag);
+		return {
+			id: ag.props.id.value
+		};
 	}
 
 	async deleteCourse(id: string) {
-		await this._repo.deleteCourse(id);
-		return id;
+		const found = await this._repo.findCourse(id);
+		if (!found) throw new Error('Course not found');
+		const ag = CourseAggregate.from(found.props);
+		await this._repo.deleteCourse(ag.props.id.value);
+		return {
+			id: ag.props.id.value
+		};
 	}
 
 	async updateCourseField(id: string, patch: Partial<Omit<CourseProps, 'id' | 'createdAt'>>) {
@@ -49,7 +65,7 @@ export async function _main_() {
 	const uc = new CourseUseCase(mockRepo);
 
 	const startDate = Date.now() + 1000 * 60 * 60 * 24 * 14;
-	const newCourse = await uc.createCourse({
+	const newCourseResult = await uc.createCourse({
 		title: CourseTitle.create('new Course'),
 		description: CourseDescription.create('This is a new course description'),
 		studentCountRange: CourseStudentCountRange.create({ min: 20, max: 60 }),
@@ -57,6 +73,7 @@ export async function _main_() {
 		price: CoursePrice.create(200),
 		status: CourseStatus.create(EnumCourseStatus.PENDING)
 	});
+
 	await uc.createCourse({
 		title: CourseTitle.create('new Course 2'),
 		description: CourseDescription.create('This is a new course description 2'),
@@ -66,11 +83,14 @@ export async function _main_() {
 		status: CourseStatus.create(EnumCourseStatus.PENDING)
 	});
 
-	const findCourse = await uc.getCourse(newCourse.props.id.value);
+	if (!newCourseResult.id) {
+		throw new Error('Course creation failed');
+	}
+	const findCourse = await uc.getCourse(newCourseResult.id);
 	let listCourse: CourseAggregate[] = [];
 	listCourse = await uc.listCourses();
 
-	console.log('newCourse', newCourse);
+	console.log('newCourseResult', newCourseResult.id);
 	console.log('mockRepo', mockRepo);
 	console.log('findCourse', findCourse);
 	console.log('listCourse', {
@@ -79,30 +99,27 @@ export async function _main_() {
 	});
 
 	if (findCourse) {
-		console.log('--- updateCourseField ---', findCourse);
-		await uc.updateCourseField(findCourse.props.id.value, {
+		await uc.updateCourseField(findCourse.id.value, {
 			title: CourseTitle.create('updated Course Title'),
 			description: CourseDescription.create('updated Course Description')
 		});
 	}
 
-	const updateCourse = await uc.getCourse(newCourse.props.id.value);
+	const updateCourse = await uc.getCourse(newCourseResult.id);
 	console.log('updateCourse', {
 		raw_data: updateCourse,
 		JSON_data: JSON.stringify(updateCourse)
 	});
 
-	const deletedCourse = await uc.deleteCourse(newCourse.props.id.value);
-
-	if (deletedCourse) {
-		console.log('Course deleted successfully:', deletedCourse);
-	} else {
-		console.log('Course deletion failed:', deletedCourse);
+	const deletedCourseResult = await uc.deleteCourse(newCourseResult.id);
+	if (!deletedCourseResult.id) {
+		throw new Error('Course deletion failed');
 	}
+	console.log('Course deleted successfully:', deletedCourseResult);
 
 	listCourse = await uc.listCourses();
-  console.log('after delete - listCourse', {
-    raw_data: listCourse,
-    JSON_data: JSON.stringify(listCourse)
-  });
+	console.log('after delete - listCourse', {
+		raw_data: listCourse,
+		JSON_data: JSON.stringify(listCourse)
+	});
 }

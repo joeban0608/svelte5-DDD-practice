@@ -84,7 +84,6 @@ export enum EnumCourseStatus {
 export class CourseStatus {
 	private static readonly schema = z.enum([
 		EnumCourseStatus.PENDING,
-		EnumCourseStatus.STARTED,
 		EnumCourseStatus.IN_PROGRESS,
 		EnumCourseStatus.COMPLETED,
 		EnumCourseStatus.CANCELLED
