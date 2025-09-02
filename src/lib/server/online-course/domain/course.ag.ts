@@ -7,8 +7,8 @@ import {
 	CoursePrice,
 	CourseStatus,
 	CourseStudentCountRange,
-	CourseTitle,
-	EnumCourseStatus
+	CourseTitle
+	// EnumCourseStatus
 } from './course.vo';
 
 /*
@@ -25,7 +25,7 @@ import {
 	👌 public readonly status: "pending" | "started" | "in_progress" | "completed" | "cancelled"
 */
 
-type CourseProps = {
+export type CourseProps = {
 	id: CourseId;
 	title: CourseTitle;
 	description: CourseDescription;
@@ -44,24 +44,11 @@ export class CourseAggregate {
 		return new CourseAggregate({
 			...props,
 			id: CourseId.random(),
-			createdAt: CreatedAt.create()
+			createdAt: CreatedAt.create(Date.now())
 		});
 	}
-}
 
-export function _main_() {
-	const startDate = Date.now() + 1000 * 60 * 60 * 24 * 14;
-	const course = CourseAggregate.create({
-		title: CourseTitle.create('new Course'),
-		description: CourseDescription.create('This is a new course description'),
-		studentCountRange: CourseStudentCountRange.create({ min: 20, max: 60 }),
-		period: CoursePeriod.create({ start: startDate, end: startDate + 1000 * 60 * 60 * 24 * 91 }),
-		price: CoursePrice.create(200),
-		status: CourseStatus.create(EnumCourseStatus.PENDING)
-	});
-
-	console.log('course', {
-		rawData: course,
-		JSONData: JSON.stringify(course)
-	});
+	public static from(primitive: CourseProps) {
+		return new CourseAggregate(primitive);
+	}
 }

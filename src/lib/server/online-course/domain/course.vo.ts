@@ -31,7 +31,7 @@ export class CourseDescription {
 	}
 }
 
-export interface ICourseStudentCountRange {
+interface ICourseStudentCountRange {
 	min: number;
 	max: number;
 }
