@@ -1,7 +1,9 @@
 import z from 'zod';
-
+/* 
+	value object 不能給予設值, 不然會造成 entity.create or ag.create時, 從 db 拿回來的資料會被覆蓋掉
+*/
 export class CourseId {
-	private static readonly schema = z.string().uuid();
+	private static readonly schema = z.uuid();
 	constructor(public readonly value: string) {}
 	public static create(value: string) {
 		return new CourseId(this.schema.parse(value));
@@ -29,50 +31,44 @@ export class CourseDescription {
 	}
 }
 
-export class CourseMinStudents {
-	private static readonly schema = z.number().min(20);
-	constructor(public readonly value: number) {}
-	public static create(value: number = 20) {
-		return new CourseMinStudents(this.schema.parse(value));
-	}
+export interface ICourseStudentCountRange {
+	min: number;
+	max: number;
 }
 
-export class CourseMaxStudents {
-	private static readonly schema = z.number().max(60);
-	constructor(public readonly value: number) {}
-	public static create(value: number = 60) {
-		return new CourseMaxStudents(this.schema.parse(value));
+export class CourseStudentCountRange {
+	private static readonly schema = z.object({
+		min: z.number().min(20),
+		max: z.number().max(60)
+	});
+	constructor(public readonly value: ICourseStudentCountRange) {}
+	public static create(value: ICourseStudentCountRange) {
+		return new CourseStudentCountRange(this.schema.parse(value));
 	}
 }
 
 export class CoursePrice {
 	private static readonly schema = z.number().min(200);
 	constructor(public readonly value: number) {}
-	public static create(value: number = 200) {
+	public static create(value: number) {
 		return new CoursePrice(this.schema.parse(value));
 	}
 }
 
-export class CourseStartDate {
-	private static readonly schema = z.number().min(Date.now() + 1000 * 60 * 60 * 24 * 7);
-	constructor(public readonly value: number) {}
-	public static create(value: number) {
-		return new CourseStartDate(this.schema.parse(value));
-	}
-}
-
-// CourseEndDate 至少要大於 startDate + 90 天
-export class CourseEndDate {
-	private static readonly schema = z.number();
-	constructor(public readonly value: number) {}
-	public static create(value: number, startDate: number) {
-		const schema = CourseEndDate.schema.refine(
-			(val) => val > startDate + 1000 * 60 * 60 * 24 * 90,
+export class CoursePeriod {
+	private static readonly schema = z.object({
+		start: z.number().min(Date.now() + 1000 * 60 * 60 * 24 * 7),
+		end: z.number()
+	});
+	constructor(public readonly value: { start: number; end: number }) {}
+	public static create(value: { start: number; end: number }) {
+		const schema = CoursePeriod.schema.refine(
+			(val) => val.end > val.start + 1000 * 60 * 60 * 24 * 90,
 			{
 				message: 'End date must be greater than start date'
 			}
 		);
-		return new CourseEndDate(schema.parse(value));
+		return new CoursePeriod(schema.parse(value));
 	}
 }
 
@@ -94,7 +90,7 @@ export class CourseStatus {
 		EnumCourseStatus.CANCELLED
 	]);
 	constructor(public readonly value: EnumCourseStatus) {}
-	public static create(value: EnumCourseStatus = EnumCourseStatus.PENDING) {
+	public static create(value: EnumCourseStatus) {
 		return new CourseStatus(this.schema.parse(value));
 	}
 }

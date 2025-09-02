@@ -2,14 +2,13 @@
 import { CreatedAt } from '$lib/server/_shard/shard.vo';
 import {
 	CourseDescription,
-	CourseEndDate,
 	CourseId,
-	CourseMaxStudents,
-	CourseMinStudents,
+	CoursePeriod,
 	CoursePrice,
-	CourseStartDate,
 	CourseStatus,
-	CourseTitle
+	CourseStudentCountRange,
+	CourseTitle,
+	EnumCourseStatus
 } from './course.vo';
 
 /*
@@ -17,26 +16,22 @@ import {
 	👌 public readonly id: string,
 	public readonly teacher: Teacher, // 可以是 Teacher Entity 或 TeacherId
 	private students: Student[] = [], // 或 StudentId[]
-	👌 public title: string,
-	👌 public description: string,
-	👌 public readonly minStudents: number,
-	👌 public readonly maxStudents: number,
+	👌 public readonly title: string,
+	👌 public readonly description: string,
+	👌 public readonly studentCountRange: { min: number; max: number },
 	👌 public readonly price: number,
-	👌 public startDate: number, // 開課時間
-	👌 public endDate: number, // 結束時間
-	👌 public createdAt: number,
-	👌 public status: "pending" | "started" | "in_progress" | "completed" | "cancelled"
+	👌 public readonly period: { start: number; end: number }, // end must > start + 90day
+	👌 public readonly createdAt: number,
+	👌 public readonly status: "pending" | "started" | "in_progress" | "completed" | "cancelled"
 */
 
 type CourseProps = {
 	id: CourseId;
 	title: CourseTitle;
 	description: CourseDescription;
-	minStudents: CourseMinStudents;
-	maxStudents: CourseMaxStudents;
+	studentCountRange: CourseStudentCountRange;
 	price: CoursePrice;
-	startDate: CourseStartDate;
-	endDate: CourseEndDate;
+	period: CoursePeriod;
 	createdAt: CreatedAt;
 	status: CourseStatus;
 };
@@ -59,13 +54,14 @@ export function _main_() {
 	const course = CourseAggregate.create({
 		title: CourseTitle.create('new Course'),
 		description: CourseDescription.create('This is a new course description'),
-		minStudents: CourseMinStudents.create(),
-		maxStudents: CourseMaxStudents.create(),
-		startDate: CourseStartDate.create(startDate),
-		endDate: CourseEndDate.create(Date.now() + 1000 * 60 * 60 * 24 * 120, startDate),
-		price: CoursePrice.create(),
-		status: CourseStatus.create()
+		studentCountRange: CourseStudentCountRange.create({ min: 20, max: 60 }),
+		period: CoursePeriod.create({ start: startDate, end: startDate + 1000 * 60 * 60 * 24 * 91 }),
+		price: CoursePrice.create(200),
+		status: CourseStatus.create(EnumCourseStatus.PENDING)
 	});
 
-	console.log('course', course);
+	console.log('course', {
+		rawData: course,
+		JSONData: JSON.stringify(course)
+	});
 }
