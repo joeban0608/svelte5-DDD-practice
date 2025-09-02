@@ -1,8 +1,7 @@
 import type { CourseAggregate } from './course.ag';
 
-export interface ICourseRepository {
+export interface ICourseRepositoryCommand {
 	saveCourse(course: CourseAggregate): Promise<void>;
-	findCourse(id: string): Promise<CourseAggregate | null>;
-	listCourses(): Promise<CourseAggregate[]>;
+	findById(id: string): Promise<CourseAggregate | null>;
 	deleteCourse(id: string): Promise<void>;
 }
