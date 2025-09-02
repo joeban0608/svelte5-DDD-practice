@@ -1,4 +1,3 @@
-// import type { CourseId, CourseTitle } from './common.vo';
 import { CreatedAt } from '$lib/server/_shard/shard.vo';
 import {
 	CourseDescription,
@@ -7,12 +6,11 @@ import {
 	CoursePrice,
 	CourseStatus,
 	CourseStudentCountRange,
-	CourseTitle
-	// EnumCourseStatus
+	CourseTitle,
+	EnumCourseStatus
 } from './course.vo';
 
-/*
-	
+/*	
 	👌 public readonly id: string,
 	public readonly teacher: Teacher, // 可以是 Teacher Entity 或 TeacherId
 	private students: Student[] = [], // 或 StudentId[]
@@ -36,6 +34,12 @@ export type CourseProps = {
 	status: CourseStatus;
 };
 
+/* 
+	- 更新事件應該有多種策略，例如：
+			1. 取消課程（status 不能是, completed, cancelled)
+			2. 開啟課程 (status 只能是 pending)
+			3. 更新課程價格 (status 只能是 pending)
+*/
 export class CourseAggregate {
 	private constructor(public readonly props: CourseProps) {}
 
@@ -50,5 +54,25 @@ export class CourseAggregate {
 
 	public static from(primitive: CourseProps) {
 		return new CourseAggregate(primitive);
+	}
+
+	public static cancel(primitive: CourseProps) {
+		if (primitive.status.value !== EnumCourseStatus.PENDING) {
+			throw new Error('Only courses with status "pending" can be cancelled.');
+		}
+		return new CourseAggregate({
+			...primitive,
+			status: CourseStatus.create(EnumCourseStatus.CANCELLED)
+		});
+	}
+
+	public static start(primitive: CourseProps) {
+		if (primitive.status.value !== EnumCourseStatus.PENDING) {
+			throw new Error('Only courses with status "pending" can be started.');
+		}
+		return new CourseAggregate({
+			...primitive,
+			status: CourseStatus.create(EnumCourseStatus.IN_PROGRESS)
+		});
 	}
 }
