@@ -72,10 +72,8 @@ export class CoursePeriod {
 	}
 }
 
-// 	public status: "pending" | "started" | "in_progress" | "completed" | "cancelled"
 export enum EnumCourseStatus {
 	PENDING = 'PENDING',
-	STARTED = 'STARTED',
 	IN_PROGRESS = 'IN_PROGRESS',
 	COMPLETED = 'COMPLETED',
 	CANCELLED = 'CANCELLED'

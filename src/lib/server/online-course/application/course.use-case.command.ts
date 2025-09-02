@@ -26,15 +26,25 @@ export class CourseUseCaseCommand {
 		};
 	}
 
-	async updateCourseField(id: string, patch: Partial<Omit<CourseProps, 'id' | 'createdAt'>>) {
+	async cancelCourse(id: string) {
 		const found = await this._repo.findById(id);
 		if (!found) throw new Error('Course not found');
-		// 用新的 CourseAggregate 或 merge 欄位
-		const updateCourseProps = { ...found.props, ...patch };
-		const updatedCourse = CourseAggregate.from(updateCourseProps);
-		await this._repo.saveCourse(updatedCourse);
+		const ag = CourseAggregate.from(found.props);
+		const updated = CourseAggregate.cancel(ag.props);
+		await this._repo.saveCourse(updated);
 		return {
-			id: updatedCourse.props.id.value
+			id: updated.props.id.value
+		};
+	}
+
+	async startCourse(id: string) {
+		const found = await this._repo.findById(id);
+		if (!found) throw new Error('Course not found');
+		const ag = CourseAggregate.from(found.props);
+		const updated = CourseAggregate.start(ag.props);
+		await this._repo.saveCourse(updated);
+		return {
+			id: updated.props.id.value
 		};
 	}
 }
