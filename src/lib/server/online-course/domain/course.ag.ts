@@ -21,7 +21,7 @@ import {
 	👌 public status: "pending" | "in_progress" | "completed" | "cancelled"
 */
 
-type CourseProps = {
+export type CourseProps = {
 	id: CourseId;
 	title: CourseTitle;
 	description: CourseDescription;
@@ -41,5 +41,9 @@ export class CourseAggregate {
 			id: CourseId.create(crypto.randomUUID()),
 			createdAt: CreatedAt.create()
 		});
+	}
+
+	public static from(primitive: CourseProps): CourseAggregate {
+		return new CourseAggregate(primitive);
 	}
 }
