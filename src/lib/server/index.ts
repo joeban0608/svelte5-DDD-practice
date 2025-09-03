@@ -16,6 +16,8 @@ export async function _main_() {
 		const mockRepo = new MockCourseRepo(courseData);
 		const uc = new CourseUseCase(mockRepo);
 		const startDate = Date.now() + 1000 * 60 * 60 * 24 * 14;
+		let findCourse: CourseAggregate | null = null;
+		let listCourse: CourseAggregate[] = [];
 
 		const createNewCourseResult = await uc.createCourse({
 			title: CourseTitle.create('new Course'),
@@ -24,6 +26,17 @@ export async function _main_() {
 			period: CoursePeriod.create({ start: startDate, end: startDate + 1000 * 60 * 60 * 24 * 91 }),
 			status: CourseStatus.create(EnumCourseStatus.PENDING)
 		});
+
+		if (!createNewCourseResult.id) {
+			throw new Error('Failed to create a new course');
+		}
+
+		findCourse = await uc.getCourse(createNewCourseResult.id);
+		console.log('*'.repeat(100) + '\n' + 'find course after create', {
+			raw_data: findCourse,
+			JSON_data: JSON.stringify(findCourse)
+		});
+
 		await uc.createCourse({
 			title: CourseTitle.create('new Course 2'),
 			description: CourseDescription.create('This is a new course description 2'),
@@ -32,39 +45,35 @@ export async function _main_() {
 			status: CourseStatus.create(EnumCourseStatus.PENDING)
 		});
 
-		let findCourse: CourseAggregate | null = null;
-		let listCourse: CourseAggregate[] = [];
 		listCourse = await uc.listCourses();
-		console.log('*'.repeat(100) + '\n' + 'listCourse', {
+		console.log('*'.repeat(100) + '\n' + 'listCourse after create second course', {
 			raw_data: listCourse,
 			JSON_data: JSON.stringify(listCourse)
 		});
 
-		const updateCourse = await uc.getCourse(createNewCourseResult.props.id.value);
-		console.log('*'.repeat(100) + '\n' + 'updateCourse', {
-			raw_data: updateCourse,
-			JSON_data: JSON.stringify(updateCourse)
+		const updateCourseResult = await uc.updateCourseField(createNewCourseResult.id, {
+			title: CourseTitle.create('updated Course Title'),
+			description: CourseDescription.create('updated Course Description')
 		});
 
-		findCourse = await uc.getCourse(createNewCourseResult.props.id.value);
-		if (findCourse) {
-			console.log('*'.repeat(100) + '\n' + 'find course after updated', findCourse);
-			await uc.updateCourseField(findCourse.props.id.value, {
-				title: CourseTitle.create('updated Course Title'),
-				description: CourseDescription.create('updated Course Description')
-			});
+		if (!updateCourseResult.id) {
+			throw new Error('Failed to update course');
+		}
+		console.log('*'.repeat(100) + '\n' + 'update Course successfully:', updateCourseResult);
+		findCourse = await uc.getCourse(createNewCourseResult.id);
+		console.log('find course after create', {
+			raw_data: findCourse,
+			JSON_data: JSON.stringify(findCourse)
+		});
+
+		const deletedCourseResult = await uc.deleteCourse(createNewCourseResult.id);
+		if (!deletedCourseResult.id) {
+			throw new Error('Failed to delete course');
 		}
 
-		const deletedCourse = await uc.deleteCourse(createNewCourseResult.props.id.value);
-
-		if (deletedCourse) {
-			console.log('*'.repeat(100) + '\n' + 'Course deleted successfully:', deletedCourse);
-		} else {
-			console.log('*'.repeat(100) + '\n' + 'Course deletion failed:', deletedCourse);
-		}
-
+		console.log('*'.repeat(100) + '\n' + 'delete Course successfully:', deletedCourseResult);
 		listCourse = await uc.listCourses();
-		console.log('*'.repeat(100) + '\n' + 'after delete - listCourse', {
+		console.log('after delete - listCourse', {
 			raw_data: listCourse,
 			JSON_data: JSON.stringify(listCourse)
 		});
