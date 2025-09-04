@@ -1,36 +1,23 @@
 import { CourseAggregate, type CourseProps } from '../domain/course.ag';
 
-import type { ICourseRepository } from '../domain/i-course.repo';
+import type { ICourseRepositoryCommand } from '../domain/i-course.repo.command';
 
-export class CourseUseCase {
-	constructor(private readonly _repo: ICourseRepository) {}
-
-	async getCourse(id: string): Promise<CourseAggregate | null> {
-		const found = await this._repo.findCourse(id);
-		if (!found) throw new Error('Course not found');
-		const ag = CourseAggregate.from(found.props);
-		return ag;
-	}
-
-	async listCourses(): Promise<CourseAggregate[]> {
-		const foundList = await this._repo.listCourses();
-		const agList = foundList.map((course) => CourseAggregate.from(course.props));
-		return agList;
-	}
+export class CourseUseCaseCommand {
+	constructor(private readonly _repo: ICourseRepositoryCommand) {}
 
 	async createCourse(input: Omit<CourseProps, 'id' | 'createdAt'>): Promise<{ id: string }> {
 		const ag = CourseAggregate.create(input);
-		await this._repo.saveCourse(ag);
+		await this._repo.save(ag);
 		return {
 			id: ag.props.id.value
 		};
 	}
 
 	async deleteCourse(id: string): Promise<{ id: string }> {
-		const found = await this._repo.findCourse(id);
+		const found = await this._repo.findById(id);
 		if (!found) throw new Error('Course not found');
 		const ag = CourseAggregate.from(found.props);
-		await this._repo.deleteCourse(ag.props.id.value);
+		await this._repo.delete(ag.props.id.value);
 		return {
 			id: ag.props.id.value
 		};
@@ -40,12 +27,12 @@ export class CourseUseCase {
 		id: string,
 		patch: Partial<Omit<CourseProps, 'id' | 'createdAt'>>
 	): Promise<{ id: string }> {
-		const found = await this._repo.findCourse(id);
+		const found = await this._repo.findById(id);
 		if (!found) throw new Error('Course not found');
 		// 用新的 CourseAggregate 或 merge 欄位
 		const updateCourseProps = { ...found.props, ...patch };
 		const updatedCourse = CourseAggregate.from(updateCourseProps);
-		await this._repo.saveCourse(updatedCourse);
+		await this._repo.save(updatedCourse);
 		return {
 			id: updatedCourse.props.id.value
 		};
