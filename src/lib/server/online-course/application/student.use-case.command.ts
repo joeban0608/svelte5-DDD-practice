@@ -4,7 +4,7 @@ import { StudentAggregate, type StudentProps } from '../domain/student.ag';
 export class StudentUseCaseCommand {
 	constructor(private _repo: IStudentRepositoryCommand) {}
 
-	async createStudent(input: Omit<StudentProps, 'id'>): Promise<{ id: string }> {
+	async createStudent(input: Omit<StudentProps, 'id' | 'createdAt'>): Promise<{ id: string }> {
 		const ag = StudentAggregate.create(input);
 		await this._repo.save(ag);
 		return {
