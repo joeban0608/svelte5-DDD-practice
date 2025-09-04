@@ -1,5 +1,7 @@
 import { CourseUseCaseCommand } from './online-course/application/course.use-case.command';
 import { CourseUseCaseQuery } from './online-course/application/course.use-case.query';
+import { EnrollmentUseCaseCommand } from './online-course/application/enrollment.use-case.command';
+import { EnrollmentUseCaseQuery } from './online-course/application/enrollment.use-case.query';
 import { StudentUseCaseCommand } from './online-course/application/student.use-case.command';
 import { StudentUseCaseQuery } from './online-course/application/student.use-case.query';
 import { CourseAggregate } from './online-course/domain/course.ag';
@@ -15,6 +17,8 @@ import type { StudentAggregate } from './online-course/domain/student.ag';
 import { StudentEmail, StudentName } from './online-course/domain/student.vo';
 import { MockCourseRepoCommand } from './online-course/infrastructure/mock-course.repo.command';
 import { MockCourseRepoQuery } from './online-course/infrastructure/mock-course.repo.query';
+import { MockEnrollmentRepositoryCommand } from './online-course/infrastructure/mock-enrollment.repo.command';
+import { MockEnrollmentRepositoryQuery } from './online-course/infrastructure/mock-enrollment.repo.query';
 import { MockStudentRepoCommand } from './online-course/infrastructure/mock-student.repo.command';
 import { MockStudentRepoQuery } from './online-course/infrastructure/mock-student.repo.query';
 
@@ -111,10 +115,16 @@ async function _course_() {
 		}
 		findCourse = await ucQuery.getCourse(createThirdCourseResult.id);
 		console.log('find Course after cancel Third Course:', findCourse);
+		listCourse = await ucQuery.listCourses();
+		console.log('*'.repeat(100) + '\n' + 'listCourse after cancel Third Course:', {
+			raw_data: listCourse,
+			JSON_data: JSON.stringify(listCourse)
+		});
 		return {
 			startDate,
 			ucCommand,
-			ucQuery
+			ucQuery,
+			mockRepoQuery
 		};
 	} catch (error) {
 		throw new Error('Error in _course_ function: ' + (error as Error).message);
@@ -122,53 +132,108 @@ async function _course_() {
 }
 
 async function _student_() {
-	const studentData = new Map();
-	const mockRepoCommand = new MockStudentRepoCommand(studentData);
-	const ucCommand = new StudentUseCaseCommand(mockRepoCommand);
-	const mockRepoQuery = new MockStudentRepoQuery(studentData);
-	const ucQuery = new StudentUseCaseQuery(mockRepoQuery);
-	let findStudent: StudentAggregate | null = null;
-	let listStudents: StudentAggregate[] = [];
-	const create_student_1_result = await ucCommand.createStudent({
-		name: new StudentName('Student 1'),
-		email: new StudentEmail('student1@example.com')
-	});
-	if (!create_student_1_result.id) {
-		throw new Error('Failed to create student 1');
-	}
-	console.log('*'.repeat(100) + '\n' + 'create_student_1_result', create_student_1_result);
-	findStudent = await ucQuery.findById(create_student_1_result.id);
-	console.log('findStudent', findStudent);
-	await ucCommand.createStudent({
-		name: new StudentName('Student 2'),
-		email: new StudentEmail('student2@example.com')
-	});
-	await ucCommand.createStudent({
-		name: new StudentName('Student 3'),
-		email: new StudentEmail('student3@example.com')
-	});
+	try {
+		const studentData = new Map();
+		const mockRepoCommand = new MockStudentRepoCommand(studentData);
+		const ucCommand = new StudentUseCaseCommand(mockRepoCommand);
+		const mockRepoQuery = new MockStudentRepoQuery(studentData);
+		const ucQuery = new StudentUseCaseQuery(mockRepoQuery);
+		let findStudent: StudentAggregate | null = null;
+		let listStudents: StudentAggregate[] = [];
+		const create_student_1_result = await ucCommand.createStudent({
+			name: new StudentName('Student 1'),
+			email: new StudentEmail('student1@example.com')
+		});
+		if (!create_student_1_result.id) {
+			throw new Error('Failed to create student 1');
+		}
+		console.log('*'.repeat(100) + '\n' + 'create_student_1_result', create_student_1_result);
+		findStudent = await ucQuery.getStudent(create_student_1_result.id);
+		console.log('findStudent', findStudent);
+		await ucCommand.createStudent({
+			name: new StudentName('Student 2'),
+			email: new StudentEmail('student2@example.com')
+		});
+		await ucCommand.createStudent({
+			name: new StudentName('Student 3'),
+			email: new StudentEmail('student3@example.com')
+		});
 
-	listStudents = await ucQuery.list();
-	console.log('*'.repeat(100) + '\n' + 'listStudents after creating 3 students:', {
-		raw_data: listStudents,
-		JSON_data: JSON.stringify(listStudents)
-	});
-	const delete_student_1_result = await ucCommand.deleteStudent(create_student_1_result.id);
-	if (!delete_student_1_result.id) {
-		throw new Error('Failed to delete student 1');
+		listStudents = await ucQuery.listStudents();
+		console.log('*'.repeat(100) + '\n' + 'listStudents after creating 3 students:', {
+			raw_data: listStudents,
+			JSON_data: JSON.stringify(listStudents)
+		});
+		const delete_student_1_result = await ucCommand.deleteStudent(create_student_1_result.id);
+		if (!delete_student_1_result.id) {
+			throw new Error('Failed to delete student 1');
+		}
+		console.log('*'.repeat(100) + '\n' + 'delete_student_1_result', delete_student_1_result);
+		listStudents = await ucQuery.listStudents();
+		console.log('listStudents after delete 1 students:', {
+			raw_data: listStudents,
+			JSON_data: JSON.stringify(listStudents)
+		});
+
+		return {
+			ucCommand,
+			ucQuery,
+			mockRepoQuery
+		};
+	} catch (error) {
+		throw new Error('Error in _student_ function: ' + (error as Error).message);
 	}
-	console.log('*'.repeat(100) + '\n' + 'delete_student_1_result', delete_student_1_result);
-	listStudents = await ucQuery.list();
-	console.log('listStudents after delete 1 students:', {
-		raw_data: listStudents,
-		JSON_data: JSON.stringify(listStudents)
-	});
+}
+
+async function _enrollment_(
+	_studentUseCaseQuery: StudentUseCaseQuery,
+	_courseUseCaseQuery: CourseUseCaseQuery
+) {
+	try {
+		const enrollmentData = new Map();
+		const mockRepoCommand = new MockEnrollmentRepositoryCommand(enrollmentData);
+		const mockRepoQuery = new MockEnrollmentRepositoryQuery(enrollmentData);
+		const ucQuery = new EnrollmentUseCaseQuery(mockRepoQuery);
+		const ucCommand = new EnrollmentUseCaseCommand({
+			EnrollmentRepoCommand: mockRepoCommand,
+			EnrollmentRepoQuery: mockRepoQuery,
+			StudentUseCaseQuery: _studentUseCaseQuery,
+			CourseUseCaseQuery: _courseUseCaseQuery
+		});
+		return {
+			ucCommand,
+			ucQuery,
+			mockRepoQuery
+		};
+	} catch (error) {
+		throw new Error('Error in _enrollment_ function: ' + (error as Error).message);
+	}
 }
 
 export async function _main_() {
 	try {
-		await _course_();
-		await _student_();
+		const course = await _course_();
+		const student = await _student_();
+		const enrollmentCQ = await _enrollment_(student.ucQuery, course.ucQuery);
+
+		const findCourseResult = await course.ucQuery.findFirstCourse();
+		console.log('*'.repeat(100) + '\n' + 'findCourseResult', findCourseResult);
+		const findStudentResult = await student.ucQuery.findFirstStudent();
+		console.log('findStudentResult', findStudentResult);
+
+		if (findCourseResult && findStudentResult) {
+			// Do something with the found course and student
+			const enrollmentResult = await enrollmentCQ.ucCommand.enroll({
+				studentId: findStudentResult.props.id.value,
+				courseId: findCourseResult.props.id.value
+			});
+			console.log('*'.repeat(100) + '\n' + 'enrollmentResult', enrollmentResult);
+			if (!enrollmentResult.id) {
+				throw new Error('Enrollment failed');
+			}
+			const findEnrollment = await enrollmentCQ.ucQuery.getEnrollment(enrollmentResult.id);
+			console.log('findEnrollment', findEnrollment);
+		}
 	} catch (error) {
 		console.error('*'.repeat(100) + '\n' + 'Error occurred :', error);
 	}

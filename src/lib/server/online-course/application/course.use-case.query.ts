@@ -12,4 +12,8 @@ export class CourseUseCaseQuery {
 	async listCourses(): Promise<CourseAggregate[]> {
 		return await this._repo.list();
 	}
+
+	async findFirstCourse(): Promise<CourseAggregate | null> {
+		return await this._repo.findFirst();
+	}
 }

@@ -11,4 +11,8 @@ export class MockCourseRepoQuery implements ICourseRepositoryQuery {
 	async list(): Promise<CourseAggregate[]> {
 		return Array.from(this.courses.values());
 	}
+	async findFirst(): Promise<CourseAggregate | null> {
+		const firstCourse = this.courses.values().next().value;
+		return firstCourse ?? null;
+	}
 }

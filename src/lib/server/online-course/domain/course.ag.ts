@@ -40,7 +40,7 @@ export class CourseAggregate {
 		return new CourseAggregate({
 			...props,
 			id: CourseId.create(crypto.randomUUID()),
-			createdAt: CreatedAt.create()
+			createdAt: CreatedAt.create(Date.now())
 		});
 	}
 

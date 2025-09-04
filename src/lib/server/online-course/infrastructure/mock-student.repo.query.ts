@@ -1,5 +1,5 @@
-import type { IStudentRepositoryQuery } from "../domain/i-student.repo.query";
-import type { StudentAggregate } from "../domain/student.ag";
+import type { IStudentRepositoryQuery } from '../domain/i-student.repo.query';
+import type { StudentAggregate } from '../domain/student.ag';
 
 export class MockStudentRepoQuery implements IStudentRepositoryQuery {
 	constructor(private students: Map<string, StudentAggregate>) {}
@@ -10,5 +10,10 @@ export class MockStudentRepoQuery implements IStudentRepositoryQuery {
 
 	async list(): Promise<StudentAggregate[]> {
 		return Array.from(this.students.values());
+	}
+
+	async findFirst(): Promise<StudentAggregate | null> {
+		const firstStudent = this.students.values().next().value;
+		return firstStudent ?? null;
 	}
 }
