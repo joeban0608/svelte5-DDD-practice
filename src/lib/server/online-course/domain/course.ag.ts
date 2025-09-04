@@ -5,7 +5,8 @@ import {
 	CoursePeriod,
 	CourseStatus,
 	CourseStudentCountRange,
-	CourseTitle
+	CourseTitle,
+	EnumCourseStatus
 } from './course.vo';
 
 /*
@@ -45,5 +46,19 @@ export class CourseAggregate {
 
 	public static from(primitive: CourseProps): CourseAggregate {
 		return new CourseAggregate(primitive);
+	}
+
+	public start(): void {
+		if (this.props.status.value !== EnumCourseStatus.PENDING) {
+			throw new Error('Only courses with status "pending" can be started.');
+		}
+		this.props.status = CourseStatus.create(EnumCourseStatus.IN_PROGRESS);
+	}
+
+	public cancel(): void {
+		if (this.props.status.value !== EnumCourseStatus.PENDING) {
+			throw new Error('Only courses with status "in_progress" can be cancelled.');
+		}
+		this.props.status = CourseStatus.create(EnumCourseStatus.CANCELLED);
 	}
 }
