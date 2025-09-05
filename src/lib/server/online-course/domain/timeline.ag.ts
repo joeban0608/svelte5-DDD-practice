@@ -1,5 +1,6 @@
 import { CreatedAt } from '$lib/server/_share/domain/share.vo';
-import type { CourseEntity } from './course.en';
+import { CourseEntity } from './course.en';
+import type { CourseDescription, CourseName, CourseStudentCountRange } from './course.vo';
 import { TimelineDay, TimelineId, TimelinePeriod } from './timeline.vo';
 
 export type TimelineProps = {
@@ -55,5 +56,25 @@ export class TimelineAggregate {
 
 	public static from(primitive: TimelineProps, courses: CourseEntity[]): TimelineAggregate {
 		return new TimelineAggregate(primitive, courses);
+	}
+
+	public async addCourse({
+		name,
+		description,
+		studentCountRange
+	}: {
+		name: CourseName;
+		description: CourseDescription;
+		studentCountRange: CourseStudentCountRange;
+	}): Promise<{ id: string }> {
+		const courseEntity = CourseEntity.create({
+			name,
+			description,
+			studentCountRange
+		});
+		this._courses.push(courseEntity);
+		return {
+			id: courseEntity.id.value
+		};
 	}
 }
