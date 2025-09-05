@@ -9,7 +9,13 @@ export class MockTimelineRepoCommand implements ITimelineRepoCommand {
 	}
 
 	public async save(timeline: TimelineAggregate): Promise<void> {
-		this._timelines.set(timeline.id.value, timeline);
+		const beforeSave = this._timelines.get(timeline.id.value);
+		
+		try {
+			this._timelines.set(timeline.id.value, timeline);
+		} catch (error) {
+			this._timelines.set(timeline.id.value, beforeSave);
+		}
 	}
 
 	public async delete(id: string): Promise<void> {
