@@ -16,25 +16,27 @@ export class TimelineUseCaseCommand {
 		period: number;
 	}): Promise<{ id: string }> {
 		const repo = this.uow.getTimelineRepoCommand();
-		const ag = TimelineAggregate.create({
-			day: TimelineDay.create(day),
-			period: TimelinePeriod.create(period)
+		return this.uow.execute(async () => {
+			const ag = TimelineAggregate.create({
+				day: TimelineDay.create(day),
+				period: TimelinePeriod.create(period)
+			});
+			await repo.save(ag);
+			return { id: ag.id.value };
 		});
-		await repo.save(ag);
-		return {
-			id: ag.id.value
-		};
 	}
 
 	public async deleteTimeline(id: string): Promise<{ id: string }> {
 		const repo = this.uow.getTimelineRepoCommand();
-		const found = await repo.findById(id);
-		if (!found) throw new Error('Timeline not found');
+		return this.uow.execute(async () => {
+			const found = await repo.findById(id);
+			if (!found) throw new Error('Timeline not found');
 
-		await repo.delete(id);
-		return {
-			id: found.id.value
-		};
+			await repo.delete(id);
+			return {
+				id: found.id.value
+			};
+		});
 	}
 
 	public async addCourseToTimeline(
@@ -62,7 +64,7 @@ export class TimelineUseCaseCommand {
 				studentCountRange: CourseStudentCountRange.create(courseInput.studentCountRange)
 			});
 
-			throw new Error('Method not implemented.');
+			// throw new Error('addCourseToTimeline Method test rollback');
 			await repo.save(foundAg);
 			return {
 				timelineId: foundAg.id.value,

@@ -1,20 +1,31 @@
+import { db } from '$lib/server/db';
 import { TimelineUseCaseCommand } from './application/timeline.use-case.command';
 import { TimelineUseCaseQuery } from './application/timeline.use-case.query';
 import type { TimelineAggregate } from './domain/timeline.ag';
-import { MockTimelineRepoCommand } from './infrastructure/mock-timeline.repo.command';
-import { MockTimelineRepoQuery } from './infrastructure/mock-timeline.repo.query';
-import { MockTimelineUnitOfWork } from './infrastructure/mock-timeline.uow';
+import { DrizzleTimelineRepoCommand } from './infrastructure/drizzle.timeline.repo.command';
+import { DrizzleTimelineRepoQuery } from './infrastructure/drizzle.timeline.repo.query';
+import { DrizzleTimelineUnitOfWork } from './infrastructure/drizzle.timeline.uow';
+// import { MockTimelineRepoCommand } from './infrastructure/mock-timeline.repo.command';
+// import { MockTimelineRepoQuery } from './infrastructure/mock-timeline.repo.query';
+// import { MockTimelineUnitOfWork } from './infrastructure/mock-timeline.uow';
 
 export async function _main_() {
 	try {
-		const timelineData = new Map();
+		// for mock repo
+		// const timelineData = new Map();
+		// const mockTimelineRepoCommand = new MockTimelineRepoCommand(timelineData);
+		// const mockTimelineUow = new MockTimelineUnitOfWork(mockTimelineRepoCommand, timelineData);
+		// const timelineUseCaseCommand = new TimelineUseCaseCommand(mockTimelineUow);
+		// const mockTimelineRepoQuery = new MockTimelineRepoQuery(timelineData);
+		// const timelineUseCaseQuery = new TimelineUseCaseQuery(mockTimelineRepoQuery);
 
-		const mockTimelineRepoCommand = new MockTimelineRepoCommand(timelineData);
-		const mockTimelineUow = new MockTimelineUnitOfWork(mockTimelineRepoCommand, timelineData);
-		const timelineUseCaseCommand = new TimelineUseCaseCommand(mockTimelineUow);
+		// for drizzle repo
+		const drizzleTimelineRepoCommand = new DrizzleTimelineRepoCommand(db);
+		const drizzleTimelineUow = new DrizzleTimelineUnitOfWork(drizzleTimelineRepoCommand);
+		const timelineUseCaseCommand = new TimelineUseCaseCommand(drizzleTimelineUow);
+		const drizzleTimelineRepoQuery = new DrizzleTimelineRepoQuery(db);
+		const timelineUseCaseQuery = new TimelineUseCaseQuery(drizzleTimelineRepoQuery);
 
-		const mockTimelineRepoQuery = new MockTimelineRepoQuery(timelineData);
-		const timelineUseCaseQuery = new TimelineUseCaseQuery(mockTimelineRepoQuery);
 		let listTimeline: TimelineAggregate[] = [];
 		let findTimeline: TimelineAggregate | null = null;
 
