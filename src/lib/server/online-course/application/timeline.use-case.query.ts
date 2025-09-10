@@ -1,19 +1,20 @@
-import type { ITimelineRepoQuery } from '../domain/i-timeline.repo.query';
+import type { IUnitOfWork } from '../domain/i-timeline.uow';
 
 export class TimelineUseCaseQuery {
-	private _timelineRepoQuery: ITimelineRepoQuery;
-	get timelineRepoQuery() {
-		return this._timelineRepoQuery;
+	private uow: IUnitOfWork;
+	constructor(uow: IUnitOfWork) {
+		this.uow = uow;
 	}
-	constructor(timelineRepo: ITimelineRepoQuery) {
-		this._timelineRepoQuery = timelineRepo;
+
+	get timelineRepoQuery() {
+		return this.uow.timelineRepoQuery;
 	}
 
 	public async getTimeline(timelineId: string) {
-		return this._timelineRepoQuery.findById(timelineId);
+		return this.uow.timelineRepoQuery.findById(timelineId);
 	}
 
 	public async listTimelines() {
-		return this._timelineRepoQuery.list();
+		return this.uow.timelineRepoQuery.list();
 	}
 }

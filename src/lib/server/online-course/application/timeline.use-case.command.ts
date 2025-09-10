@@ -1,18 +1,14 @@
 import { CourseDescription, CourseName, CourseStudentCountRange } from '../domain/course.vo';
 import type { ITimelineRepoCommand } from '../domain/i-timeline.repo.command';
+import type { IUnitOfWork } from '../domain/i-timeline.uow';
 import { TimelineAggregate } from '../domain/timeline.ag';
 import { TimelineDay, TimelinePeriod } from '../domain/timeline.vo';
 
 export class TimelineUseCaseCommand {
-	private _timelineRepoCommand: ITimelineRepoCommand;
-	constructor(timelineRepo: ITimelineRepoCommand) {
-		this._timelineRepoCommand = timelineRepo;
+	private uow: IUnitOfWork;
+	constructor(uow: IUnitOfWork) {
+		this.uow = uow;
 	}
-
-	get timelineRepoCommand() {
-		return this._timelineRepoCommand;
-	}
-
 	public async createTimeline({
 		day,
 		period
@@ -20,24 +16,28 @@ export class TimelineUseCaseCommand {
 		day: number;
 		period: number;
 	}): Promise<{ id: string }> {
-		const ag = TimelineAggregate.create({
-			day: TimelineDay.create(day),
-			period: TimelinePeriod.create(period)
+		return this.uow.execute(async (repo: ITimelineRepoCommand) => {
+			const ag = TimelineAggregate.create({
+				day: TimelineDay.create(day),
+				period: TimelinePeriod.create(period)
+			});
+			await repo.save(ag);
+			return {
+				id: ag.id.value
+			};
 		});
-		await this._timelineRepoCommand.save(ag);
-		return {
-			id: ag.id.value
-		};
 	}
 
 	public async deleteTimeline(id: string): Promise<{ id: string }> {
-		const found = await this._timelineRepoCommand.findById(id);
-		if (!found) throw new Error('Timeline not found');
+		return this.uow.execute(async (repo: ITimelineRepoCommand) => {
+			const found = await repo.findById(id);
+			if (!found) throw new Error('Timeline not found');
 
-		await this._timelineRepoCommand.delete(id);
-		return {
-			id: found.id.value
-		};
+			await repo.delete(id);
+			return {
+				id: found.id.value
+			};
+		});
 	}
 
 	public async addCourseToTimeline(
@@ -54,19 +54,22 @@ export class TimelineUseCaseCommand {
 		timelineId: string;
 		courseId: string;
 	}> {
-		const foundAg = await this._timelineRepoCommand.findById(timelineId);
-		if (!foundAg) throw new Error('Timeline not found');
+		return this.uow.execute(async (repo: ITimelineRepoCommand) => {
+			const foundAg = await repo.findById(timelineId);
+			if (!foundAg) throw new Error('Timeline not found');
 
-		const createResult = await foundAg.addCourse({
-			name: CourseName.create(courseInput.name),
-			description: CourseDescription.create(courseInput.description),
-			studentCountRange: CourseStudentCountRange.create(courseInput.studentCountRange)
+			const createResult = await foundAg.addCourse({
+				name: CourseName.create(courseInput.name),
+				description: CourseDescription.create(courseInput.description),
+				studentCountRange: CourseStudentCountRange.create(courseInput.studentCountRange)
+			});
+
+			throw new Error('Method not implemented.');
+			await repo.save(foundAg);
+			return {
+				timelineId: foundAg.id.value,
+				courseId: createResult.id
+			};
 		});
-
-		await this._timelineRepoCommand.save(foundAg);
-		return {
-			timelineId: foundAg.id.value,
-			courseId: createResult.id
-		};
 	}
 }
