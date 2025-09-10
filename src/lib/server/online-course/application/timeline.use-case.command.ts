@@ -64,7 +64,7 @@ export class TimelineUseCaseCommand {
 				studentCountRange: CourseStudentCountRange.create(courseInput.studentCountRange)
 			});
 
-			throw new Error('Method not implemented.');
+			// throw new Error('Method not implemented.');
 			await repo.save(foundAg);
 			return {
 				timelineId: foundAg.id.value,
