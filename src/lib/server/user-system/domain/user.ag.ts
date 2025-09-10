@@ -50,13 +50,22 @@ export class UserAggregate {
 		this._permissions = props.permissions;
 	}
 
+	private static hashPassword(plainPwd: string): string {
+		return crypto.createHash('sha256').update(plain).digest('hex');
+	}
+
 	public static create(
-		props: Omit<UserProps, 'id' | 'createdAt' | 'updatedAt' | 'permissions'>
+		props: Omit<
+			UserProps & { plainPwd: string },
+			'id' | 'hashedPassword' | 'createdAt' | 'updatedAt' | 'permissions'
+		>
 	): UserAggregate {
 		const now = Date.now();
+		const hashed = this.hashPassword(plainPwd);
 		return new UserAggregate({
 			...props,
 			id: UserId.create(crypto.randomUUID()),
+			hashedPassword: UserHashedPassword.create(hashed),
 			createdAt: CreatedAt.create(now),
 			updatedAt: UpdatedAt.create(now),
 			permissions: [] // default permission
@@ -94,8 +103,10 @@ export class UserAggregate {
 	}
 
 	// 更新使用者密碼
-	public updateHashedPassword(hashedPassword: UserHashedPassword) {
-		this._hashedPassword = hashedPassword;
+
+	public updatePassword(plainPwd: string) {
+		const hashed = UserAggregate.hashPassword(plainPwd);
+		this._hashedPassword = UserHashedPassword.create(hashed);
 		this._updatedAt = UpdatedAt.create(Date.now());
 	}
 }
