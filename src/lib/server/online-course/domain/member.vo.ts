@@ -8,12 +8,12 @@ export class MemberId {
 	}
 }
 
-const memberPermissionSchema = z.enum(['student', 'teacher', 'admin']);
-type MemberPermissionType = z.infer<typeof memberPermissionSchema>;
-export class MemberPermission {
-	private static readonly schema = memberPermissionSchema;
-	public constructor(public readonly value: MemberPermissionType) {}
-	public static create(value: MemberPermissionType): MemberPermission {
-		return new MemberPermission(this.schema.parse(value));
+const memberRoleSchema = z.enum(['student', 'teacher', 'admin']);
+type MemberRoleType = z.infer<typeof memberRoleSchema>;
+export class MemberRole {
+	private static readonly schema = memberRoleSchema;
+	public constructor(public readonly value: MemberRoleType) {}
+	public static create(value: MemberRoleType): MemberRole {
+		return new MemberRole(this.schema.parse(value));
 	}
 }
