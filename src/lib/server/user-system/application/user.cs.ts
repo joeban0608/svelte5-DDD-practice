@@ -1,6 +1,10 @@
+import {
+	CourseAdapter,
+	type MemberPermissionType
+} from '$lib/server/online-course/infrastructure/course.ad';
 import type { IUserUnitOfWork } from '../domain/i-user.uow';
 import { UserAggregate } from '../domain/user.ag';
-import { UserEmail, UserName } from '../domain/user.vo';
+import { UserEmail, UserName, UserPermission } from '../domain/user.vo';
 
 export class UserCommandService {
 	private _uow: IUserUnitOfWork;
@@ -12,21 +16,32 @@ export class UserCommandService {
 	public async registerUser({
 		name,
 		email,
-		password
+		password,
+		courseRole
 	}: {
 		name: string;
 		email: string;
 		password: string;
+		courseRole?: MemberPermissionType;
 	}): Promise<{ id: string }> {
 		return this._uow.execute(async (repo) => {
 			const existingUser = await repo.findByEmail(email);
 			if (existingUser) {
 				throw new Error('User already exists');
 			}
+
+			// 透過 CourseAdapter 轉換角色為權限字串
+			const courseAdapter = new CourseAdapter();
+			const permissions: string[] = [];
+			if (courseRole) {
+				permissions.push(courseAdapter.roleToPermission(courseRole));
+			}
+
 			const newUser = await UserAggregate.create({
 				name: UserName.create(name),
 				email: UserEmail.create(email),
-				plainPassword: password
+				plainPassword: password,
+				permissions: permissions.map((p) => UserPermission.create(p))
 			});
 
 			await repo.save(newUser);

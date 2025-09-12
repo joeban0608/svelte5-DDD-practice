@@ -23,7 +23,8 @@ async function __user__() {
 		const register_user_1_result = await userCs.registerUser({
 			name: 'user1',
 			email: 'joeban@haiman.com',
-			password: 'password1'
+			password: 'password1',
+			courseRole: 'student'
 		});
 
 		console.log(
@@ -38,7 +39,8 @@ async function __user__() {
 		const register_user_2_result = await userCs.registerUser({
 			name: 'user2',
 			email: 'joeban2@haiman.com',
-			password: 'password2'
+			password: 'password2',
+			courseRole: 'student'
 		});
 
 		console.log(
@@ -132,12 +134,6 @@ export async function __main__() {
 		if (!find_one_user_result || !find_one_course_result) {
 			throw new Error('No user or course found for enrollment');
 		}
-
-		
-
-
-
-
 	} catch (error) {
 		console.error('*'.repeat(100) + '\n' + 'Error occurred :', error);
 	}
