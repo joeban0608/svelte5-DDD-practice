@@ -51,19 +51,17 @@ export class UserAggregate {
 	}
 
 	public static async create(
-		props: Omit<UserProps, 'id' | 'createdAt' | 'updatedAt' | 'permissions' | 'hashedPassword'> & {
-			plainPassword: string;
-		}
+		props: Omit<UserProps, 'id' | 'createdAt' | 'updatedAt' | 'hashedPassword'>,
+		plainPassword: string
 	): Promise<UserAggregate> {
 		const now = Date.now();
-		const hashed = await this.hashPassword(props.plainPassword);
+		const hashed = await this.hashPassword(plainPassword);
 		return new UserAggregate({
 			...props,
 			id: UserId.create(crypto.randomUUID()),
 			hashedPassword: UserHashedPassword.create(hashed),
 			createdAt: CreatedAt.create(now),
-			updatedAt: UpdatedAt.create(now),
-			permissions: [] // default permission
+			updatedAt: UpdatedAt.create(now)
 		});
 	}
 
@@ -104,32 +102,6 @@ export class UserAggregate {
 		}
 		const newHashedPassword = await UserAggregate.hashPassword(newPassword);
 		this._hashedPassword = UserHashedPassword.create(newHashedPassword);
-		this._updatedAt = UpdatedAt.create(Date.now());
-	}
-
-	// 更新使用者名稱
-	public updateName(name: UserName) {
-		this._name = name;
-		this._updatedAt = UpdatedAt.create(Date.now());
-	}
-
-	// 更新使用者 Email
-	public updateEmail(email: UserEmail) {
-		this._email = email;
-		this._updatedAt = UpdatedAt.create(Date.now());
-	}
-
-	// 新增權限（如 course:student）
-	public addPermission(permission: UserPermission) {
-		if (!this._permissions.some((p) => p.value === permission.value)) {
-			this._permissions.push(permission);
-			this._updatedAt = UpdatedAt.create(Date.now());
-		}
-	}
-
-	// 移除權限
-	public removePermission(permission: UserPermission) {
-		this._permissions = this._permissions.filter((p) => p.value !== permission.value);
 		this._updatedAt = UpdatedAt.create(Date.now());
 	}
 }

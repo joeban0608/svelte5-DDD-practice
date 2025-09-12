@@ -3,19 +3,22 @@ import { CourseQueryService } from './online-course/application/course.qs';
 import type { CourseAggregate } from './online-course/domain/course.ag';
 import { MockCourseQueryRepository } from './online-course/infrastructure/mock-course.qr';
 import { MockCourseUnitOfWork } from './online-course/infrastructure/mock-course.uow';
+import { UserSystemAntiCorruptionLayerAdapter } from './online-course/infrastructure/user-system.acl.ad';
 import { UserCommandService } from './user-system/application/user.cs';
 import { UserQueryService } from './user-system/application/user.qs';
 import { UserAggregate } from './user-system/domain/user.ag';
+import { CourseAdapter } from './user-system/infrastructure/course.ad';
 import { MockUserQueryRepository } from './user-system/infrastructure/mock-user.qr';
 import { MockUserUnitOfWork } from './user-system/infrastructure/mock-user.uow';
 
 async function __user__() {
 	try {
+		const courseAdapter = new CourseAdapter();
 		const userData = new Map();
 		const mockUserQr = new MockUserQueryRepository(userData);
 		const mockUserUow = new MockUserUnitOfWork(mockUserQr, userData);
 		const userQs = new UserQueryService(mockUserUow);
-		const userCs = new UserCommandService(mockUserUow);
+		const userCs = new UserCommandService(mockUserUow, courseAdapter);
 
 		let findUser: UserAggregate | null = null;
 		let listUsers: UserAggregate[] = [];
@@ -23,7 +26,8 @@ async function __user__() {
 		const register_user_1_result = await userCs.registerUser({
 			name: 'user1',
 			email: 'joeban@haiman.com',
-			password: 'password1'
+			password: 'password1',
+			role: 'student'
 		});
 
 		console.log(
@@ -38,7 +42,8 @@ async function __user__() {
 		const register_user_2_result = await userCs.registerUser({
 			name: 'user2',
 			email: 'joeban2@haiman.com',
-			password: 'password2'
+			password: 'password2',
+			role: 'student'
 		});
 
 		console.log(
@@ -78,14 +83,16 @@ async function __user__() {
 	}
 }
 
-async function __course__() {
+async function __course__(userQs: UserQueryService) {
 	try {
 		// to be implemented
 		const courseData = new Map();
+		const userSystemAdapter = new UserSystemAntiCorruptionLayerAdapter(userQs);
+
 		const mockCourseQr = new MockCourseQueryRepository(courseData);
 		const mockCourseUow = new MockCourseUnitOfWork(mockCourseQr, courseData);
 		const courseQs = new CourseQueryService(mockCourseUow);
-		const courseCs = new CourseCommandService(mockCourseUow);
+		const courseCs = new CourseCommandService(mockCourseUow, userSystemAdapter);
 		let findCourse: CourseAggregate | null = null;
 		const create_course_1_result = await courseCs.createCourse({
 			name: 'course1',
@@ -117,27 +124,39 @@ export async function __main__() {
 		await new Promise((resolve) => setTimeout(resolve, 1000)); // wait for 1 second, 測試 updatedAt 變化
 
 		// initial course
-		const { courseQs, courseCs } = await __course__();
+		const { courseQs, courseCs } = await __course__(userQs);
 		await new Promise((resolve) => setTimeout(resolve, 1000)); // wait for 1 second, 測試 updatedAt 變化
+		let findCourse: CourseAggregate | null = null;
+		console.log('*'.repeat(100) + '\n' + 'start add student to course :');
 
-		console.log('*'.repeat(100) + '\n' + 'start add course :');
-
-		// test findOneUser
+		/* 
+			 -- add student to course --
+		 1. find one user
+		 2. find one course
+		 3. add student to course
+		*/
+		// findOneUser
 		const find_one_user_result = await userQs.getOneUser();
 		console.log('findOneUser :', JSON.stringify(find_one_user_result, null, 2));
 
-		// test findOneCourse
+		// findOneCourse
 		const find_one_course_result = await courseQs.getOneCourse();
 		console.log('findOneCourse :', JSON.stringify(find_one_course_result, null, 2));
 		if (!find_one_user_result || !find_one_course_result) {
 			throw new Error('No user or course found for enrollment');
 		}
 
-		
+		const add_student_result = await courseCs.addStudent({
+			courseId: find_one_course_result.id.value,
+			userId: find_one_user_result.id.value
+		});
+		console.log(
+			'*'.repeat(100) + '\n' + 'add_student_result :',
+			JSON.stringify(add_student_result, null, 2)
+		);
 
-
-
-
+		findCourse = await courseQs.getCourse(find_one_course_result.id.value);
+		console.log('findCourseAfterAddStudent :', JSON.stringify(findCourse, null, 2));
 	} catch (error) {
 		console.error('*'.repeat(100) + '\n' + 'Error occurred :', error);
 	}

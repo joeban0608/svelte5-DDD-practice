@@ -1,6 +1,8 @@
 import { CreatedAt, UpdatedAt } from '$lib/server/_share/domain/share.vo';
+import { UserId } from '$lib/server/user-system/domain/user.vo';
 import { CourseId, CourseName, CourseDescription, CourseStudentCountRange } from './course.vo';
 import { MemberEntity } from './member.en';
+import { MemberRole, type MemberRoleType } from './member.vo';
 
 export type CourseProps = {
 	id: CourseId;
@@ -70,28 +72,39 @@ export class CourseAggregate {
 		return new CourseAggregate(primitive, members);
 	}
 
-	public addMember(member: MemberEntity) {
+	public async addMember({ userId, roles }: { userId: string; roles: MemberRoleType[] }): Promise<{
+		memberId: string;
+	}> {
+		if (roles.length !== 1 || roles[0] !== 'student') {
+			throw new Error('User must have exactly one role: student');
+		}
+
+		const member = await MemberEntity.create({
+			userId: UserId.create(userId),
+			role: MemberRole.create(roles[0])
+		});
 		this._members.push(member);
 		this._updatedAt = UpdatedAt.create(Date.now());
+		return { memberId: member.id.value };
 	}
 
-	public removeMember(member: MemberEntity) {
-		this._members = this._members.filter((m) => m !== member);
-		this._updatedAt = UpdatedAt.create(Date.now());
-	}
+	// public removeMember(member: MemberEntity) {
+	// 	this._members = this._members.filter((m) => m !== member);
+	// 	this._updatedAt = UpdatedAt.create(Date.now());
+	// }
 
-	public changeName(name: CourseName) {
-		this._name = name;
-		this._updatedAt = UpdatedAt.create(Date.now());
-	}
+	// public changeName(name: CourseName) {
+	// 	this._name = name;
+	// 	this._updatedAt = UpdatedAt.create(Date.now());
+	// }
 
-	public changeDescription(description: CourseDescription) {
-		this._description = description;
-		this._updatedAt = UpdatedAt.create(Date.now());
-	}
+	// public changeDescription(description: CourseDescription) {
+	// 	this._description = description;
+	// 	this._updatedAt = UpdatedAt.create(Date.now());
+	// }
 
-	public changeStudentCountRange(range: CourseStudentCountRange) {
-		this._studentCountRange = range;
-		this._updatedAt = UpdatedAt.create(Date.now());
-	}
+	// public changeStudentCountRange(range: CourseStudentCountRange) {
+	// 	this._studentCountRange = range;
+	// 	this._updatedAt = UpdatedAt.create(Date.now());
+	// }
 }

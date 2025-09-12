@@ -1,33 +1,50 @@
+import type { MemberRoleType } from '$lib/server/online-course/domain/member.vo';
+import type { ICourseAntiCorruptionLayerAdapter } from '../domain/i-course.acl.ad';
 import type { IUserUnitOfWork } from '../domain/i-user.uow';
 import { UserAggregate } from '../domain/user.ag';
-import { UserEmail, UserName } from '../domain/user.vo';
+import { UserEmail, UserName, UserPermission } from '../domain/user.vo';
 
 export class UserCommandService {
-	private _uow: IUserUnitOfWork;
+	private readonly _uow: IUserUnitOfWork;
+	private readonly _courseAclAdapter: ICourseAntiCorruptionLayerAdapter;
 
-	constructor(userUnitOfWork: IUserUnitOfWork) {
+	constructor(
+		userUnitOfWork: IUserUnitOfWork,
+		courseAclAdapter: ICourseAntiCorruptionLayerAdapter
+	) {
 		this._uow = userUnitOfWork;
+		this._courseAclAdapter = courseAclAdapter;
 	}
 
 	public async registerUser({
 		name,
 		email,
-		password
+		password,
+		role
 	}: {
 		name: string;
 		email: string;
 		password: string;
+		role: MemberRoleType;
 	}): Promise<{ id: string }> {
 		return this._uow.execute(async (repo) => {
 			const existingUser = await repo.findByEmail(email);
 			if (existingUser) {
 				throw new Error('User already exists');
 			}
-			const newUser = await UserAggregate.create({
-				name: UserName.create(name),
-				email: UserEmail.create(email),
-				plainPassword: password
-			});
+			if (!role) {
+				throw new Error('Role is required');
+			}
+			const permission = await this._courseAclAdapter.roleToPermission(role);
+
+			const newUser = await UserAggregate.create(
+				{
+					name: UserName.create(name),
+					email: UserEmail.create(email),
+					permissions: [UserPermission.create(permission)]
+				},
+				password
+			);
 
 			await repo.save(newUser);
 			return {
