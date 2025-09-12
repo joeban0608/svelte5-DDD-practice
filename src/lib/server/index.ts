@@ -13,10 +13,11 @@ import { MockUserUnitOfWork } from './user-system/infrastructure/mock-user.uow';
 async function __user__() {
 	try {
 		const userData = new Map();
+		const courseAdapter = new CourseAdapter();
+
 		const mockUserQr = new MockUserQueryRepository(userData);
 		const mockUserUow = new MockUserUnitOfWork(mockUserQr, userData);
 		const userQs = new UserQueryService(mockUserUow);
-		const courseAdapter = new CourseAdapter();
 		const userCs = new UserCommandService(mockUserUow, courseAdapter);
 
 		let findUser: UserAggregate | null = null;
@@ -86,10 +87,12 @@ async function __course__() {
 	try {
 		// to be implemented
 		const courseData = new Map();
+		const courseAdapter = new CourseAdapter();
+
 		const mockCourseQr = new MockCourseQueryRepository(courseData);
 		const mockCourseUow = new MockCourseUnitOfWork(mockCourseQr, courseData);
 		const courseQs = new CourseQueryService(mockCourseUow);
-		const courseCs = new CourseCommandService(mockCourseUow);
+		const courseCs = new CourseCommandService(mockCourseUow, courseAdapter);
 		let findCourse: CourseAggregate | null = null;
 		const create_course_1_result = await courseCs.createCourse({
 			name: 'course1',
@@ -116,6 +119,7 @@ async function __course__() {
 
 export async function __main__() {
 	try {
+		let findCourse: CourseAggregate | null = null;
 		// initial user
 		const { userQs, userCs } = await __user__();
 		await new Promise((resolve) => setTimeout(resolve, 1000)); // wait for 1 second, 測試 updatedAt 變化
@@ -136,6 +140,19 @@ export async function __main__() {
 		if (!find_one_user_result || !find_one_course_result) {
 			throw new Error('No user or course found for enrollment');
 		}
+
+		const add_student_result = await courseCs.addStudent({
+			courseId: find_one_course_result.id.value,
+			studentId: find_one_user_result.id.value,
+			permissions: ['course:student']
+		});
+		console.log(
+			'*'.repeat(100) + '\n' + 'add_student_result :',
+			JSON.stringify(add_student_result, null, 2)
+		);
+
+		findCourse = await courseQs.getCourse(add_student_result.courseId);
+		console.log('find course after add student :', JSON.stringify(findCourse, null, 2));
 	} catch (error) {
 		console.error('*'.repeat(100) + '\n' + 'Error occurred :', error);
 	}

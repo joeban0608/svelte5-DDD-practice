@@ -1,6 +1,8 @@
 import { CreatedAt, UpdatedAt } from '$lib/server/_share/domain/share.vo';
+import type { UserId } from '$lib/server/user-system/domain/user.vo';
 import { CourseId, CourseName, CourseDescription, CourseStudentCountRange } from './course.vo';
 import { MemberEntity } from './member.en';
+import type { MemberRole } from './member.vo';
 
 export type CourseProps = {
 	id: CourseId;
@@ -70,9 +72,19 @@ export class CourseAggregate {
 		return new CourseAggregate(primitive, members);
 	}
 
-	public addMember(member: MemberEntity) {
+	public async addMember({
+		userId,
+		role
+	}: {
+		userId: UserId;
+		role: MemberRole;
+	}): Promise<{ memberId: string }> {
+		const member = MemberEntity.create({ userId, role });
 		this._members.push(member);
 		this._updatedAt = UpdatedAt.create(Date.now());
+		return {
+			memberId: member.id.value
+		};
 	}
 
 	public removeMember(member: MemberEntity) {

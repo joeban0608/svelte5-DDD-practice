@@ -1,5 +1,5 @@
 import type { ICourseAdapter } from '$lib/server/online-course/domain/i-course.ad';
-import { type MemberPermissionType } from '$lib/server/online-course/infrastructure/course.ad';
+import { type MemberRoleType } from '$lib/server/online-course/infrastructure/course.ad';
 import type { IUserUnitOfWork } from '../domain/i-user.uow';
 import { UserAggregate } from '../domain/user.ag';
 import { UserEmail, UserName, UserPermission } from '../domain/user.vo';
@@ -22,7 +22,7 @@ export class UserCommandService {
 		name: string;
 		email: string;
 		password: string;
-		courseRole?: MemberPermissionType;
+		courseRole?: MemberRoleType;
 	}): Promise<{ id: string }> {
 		return this._uow.execute(async (repo) => {
 			const existingUser = await repo.findByEmail(email);
