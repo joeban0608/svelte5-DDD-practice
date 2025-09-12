@@ -1,6 +1,7 @@
 import { CourseCommandService } from './online-course/application/course.cs';
 import { CourseQueryService } from './online-course/application/course.qs';
 import type { CourseAggregate } from './online-course/domain/course.ag';
+import { CourseAdapter } from './online-course/infrastructure/course.ad';
 import { MockCourseQueryRepository } from './online-course/infrastructure/mock-course.qr';
 import { MockCourseUnitOfWork } from './online-course/infrastructure/mock-course.uow';
 import { UserCommandService } from './user-system/application/user.cs';
@@ -15,7 +16,8 @@ async function __user__() {
 		const mockUserQr = new MockUserQueryRepository(userData);
 		const mockUserUow = new MockUserUnitOfWork(mockUserQr, userData);
 		const userQs = new UserQueryService(mockUserUow);
-		const userCs = new UserCommandService(mockUserUow);
+		const courseAdapter = new CourseAdapter();
+		const userCs = new UserCommandService(mockUserUow, courseAdapter);
 
 		let findUser: UserAggregate | null = null;
 		let listUsers: UserAggregate[] = [];

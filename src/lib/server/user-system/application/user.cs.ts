@@ -1,16 +1,16 @@
-import {
-	CourseAdapter,
-	type MemberPermissionType
-} from '$lib/server/online-course/infrastructure/course.ad';
+import type { ICourseAdapter } from '$lib/server/online-course/domain/i-course.ad';
+import { type MemberPermissionType } from '$lib/server/online-course/infrastructure/course.ad';
 import type { IUserUnitOfWork } from '../domain/i-user.uow';
 import { UserAggregate } from '../domain/user.ag';
 import { UserEmail, UserName, UserPermission } from '../domain/user.vo';
 
 export class UserCommandService {
 	private _uow: IUserUnitOfWork;
+	private _courseAdapter: ICourseAdapter;
 
-	constructor(userUnitOfWork: IUserUnitOfWork) {
+	constructor(userUnitOfWork: IUserUnitOfWork, courseAdapter: ICourseAdapter) {
 		this._uow = userUnitOfWork;
+		this._courseAdapter = courseAdapter;
 	}
 
 	public async registerUser({
@@ -31,10 +31,9 @@ export class UserCommandService {
 			}
 
 			// 透過 CourseAdapter 轉換角色為權限字串
-			const courseAdapter = new CourseAdapter();
 			const permissions: string[] = [];
 			if (courseRole) {
-				permissions.push(courseAdapter.roleToPermission(courseRole));
+				permissions.push(this._courseAdapter.roleToPermission(courseRole));
 			}
 
 			const newUser = await UserAggregate.create({
