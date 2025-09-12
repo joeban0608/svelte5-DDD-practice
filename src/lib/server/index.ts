@@ -120,6 +120,7 @@ async function __course__() {
 export async function __main__() {
 	try {
 		let findCourse: CourseAggregate | null = null;
+		let listStudents: UserAggregate[] = [];
 		// initial user
 		const { userQs, userCs } = await __user__();
 		await new Promise((resolve) => setTimeout(resolve, 1000)); // wait for 1 second, 測試 updatedAt 變化
@@ -130,21 +131,28 @@ export async function __main__() {
 
 		console.log('*'.repeat(100) + '\n' + 'start add course :');
 
-		// test findOneUser
+		/* 
+			加入第一個學生 
+			1. 找到學生
+			2. 找到課程
+			3. 將學生加入課程
+		*/
+		// findOneUser
 		const find_one_user_result = await userQs.getOneUser();
 		console.log('findOneUser :', JSON.stringify(find_one_user_result, null, 2));
 
-		// test findOneCourse
+		// findOneCourse
 		const find_one_course_result = await courseQs.getOneCourse();
 		console.log('findOneCourse :', JSON.stringify(find_one_course_result, null, 2));
 		if (!find_one_user_result || !find_one_course_result) {
 			throw new Error('No user or course found for enrollment');
 		}
 
+		// add student to course
 		const add_student_result = await courseCs.addStudent({
 			courseId: find_one_course_result.id.value,
 			studentId: find_one_user_result.id.value,
-			permissions: ['course:student']
+			permissions: await userQs.getUserPermissions(find_one_user_result.id.value)
 		});
 		console.log(
 			'*'.repeat(100) + '\n' + 'add_student_result :',
@@ -152,6 +160,51 @@ export async function __main__() {
 		);
 
 		findCourse = await courseQs.getCourse(add_student_result.courseId);
+
+		await new Promise((resolve) => setTimeout(resolve, 1000));
+
+		/* 
+			加入第二個學生 
+			1. 找到學生
+			2. 找到課程
+			3. 將學生加入課程
+		*/
+		console.log('*'.repeat(100) + '\n' + 'add another student');
+		listStudents = await userQs.listUsers();
+		const add_student_result_2 = await courseCs.addStudent({
+			courseId: find_one_course_result.id.value,
+			studentId: listStudents[1].id.value,
+			permissions: await userQs.getUserPermissions(listStudents[1].id.value)
+		});
+
+		findCourse = await courseQs.getCourse(add_student_result_2.courseId);
+		console.log('find course after add student :', JSON.stringify(findCourse, null, 2));
+
+		await new Promise((resolve) => setTimeout(resolve, 1000));
+		/* 
+			加入第三個學生，應該要失敗，因為大於 max student count
+		*/
+
+		console.log('*'.repeat(100) + '\n' + 'add third student, must be failed');
+		const register_user_3_result = await userCs.registerUser({
+			name: 'user3',
+			email: 'user3@example.com',
+			password: 'password',
+			courseRole: 'student'
+		});
+		console.log('register_user_3_result :', JSON.stringify(register_user_3_result));
+		if (!register_user_3_result.id) {
+			throw new Error('User registration failed');
+		}
+
+		const add_student_result_3 = await courseCs.addStudent({
+			courseId: find_one_course_result.id.value,
+			studentId: register_user_3_result.id,
+			permissions: await userQs.getUserPermissions(register_user_3_result.id)
+		});
+		console.log('add_student_result_3 :', JSON.stringify(add_student_result_3, null, 2));
+
+		findCourse = await courseQs.getCourse(add_student_result_3.courseId);
 		console.log('find course after add student :', JSON.stringify(findCourse, null, 2));
 	} catch (error) {
 		console.error('*'.repeat(100) + '\n' + 'Error occurred :', error);

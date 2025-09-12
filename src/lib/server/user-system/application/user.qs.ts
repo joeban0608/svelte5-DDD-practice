@@ -18,4 +18,7 @@ export class UserQueryService {
 	public async getOneUser() {
 		return this._uow.userQueryRepository.findOne();
 	}
+	public async getUserPermissions(userId: string) {
+		return this._uow.userQueryRepository.getPermissionList(userId);
+	}
 }

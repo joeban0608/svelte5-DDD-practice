@@ -4,4 +4,5 @@ export interface IUserQueryRepository {
 	findById(id: string): Promise<UserAggregate | null>;
 	list(): Promise<UserAggregate[]>;
 	findOne(): Promise<UserAggregate | null>;
+	getPermissionList(userId: string): Promise<string[]>;
 }

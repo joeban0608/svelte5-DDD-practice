@@ -3,7 +3,6 @@ import { CourseAggregate } from '../domain/course.ag';
 import { CourseDescription, CourseName, CourseStudentCountRange } from '../domain/course.vo';
 import type { ICourseAdapter } from '../domain/i-course.ad';
 import type { ICourseUnitOfWork } from '../domain/i-course.uow';
-import { MemberRole } from '../domain/member.vo';
 
 export class CourseCommandService {
 	private _uow: ICourseUnitOfWork;
@@ -56,14 +55,11 @@ export class CourseCommandService {
 				throw new Error('Course not found');
 			}
 
-			const _permissions = this._courseAdapter.permissionsToRole(permissions);
-			if (_permissions.length !== 1) {
-				throw new Error('Invalid role');
-			}
+			const roles = this._courseAdapter.permissionsToRole(permissions);
 
 			const addMemberResult = await course.addMember({
 				userId: UserId.create(studentId),
-				role: MemberRole.create(_permissions[0])
+				roles
 			});
 
 			await repo.save(course);

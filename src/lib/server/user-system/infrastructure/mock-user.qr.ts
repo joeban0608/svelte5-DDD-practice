@@ -16,4 +16,11 @@ export class MockUserQueryRepository implements IUserQueryRepository {
 	public async findOne(): Promise<UserAggregate | null> {
 		return this._data.values().next().value ?? null;
 	}
+	public async getPermissionList(userId: string): Promise<string[]> {
+		const user = this._data.get(userId);
+		if (!user) {
+			return [];
+		}
+		return user.permissions.map((p) => p.value);
+	}
 }

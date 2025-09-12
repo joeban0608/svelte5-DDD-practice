@@ -1,8 +1,9 @@
 import { CreatedAt, UpdatedAt } from '$lib/server/_share/domain/share.vo';
 import type { UserId } from '$lib/server/user-system/domain/user.vo';
+import type { MemberRoleType } from '../infrastructure/course.ad';
 import { CourseId, CourseName, CourseDescription, CourseStudentCountRange } from './course.vo';
 import { MemberEntity } from './member.en';
-import type { MemberRole } from './member.vo';
+import { MemberRole } from './member.vo';
 
 export type CourseProps = {
 	id: CourseId;
@@ -23,6 +24,7 @@ export class CourseAggregate {
 	private _updatedAt: UpdatedAt;
 
 	private _members: MemberEntity[];
+	private _studentCount: number;
 
 	public get description() {
 		return this._description;
@@ -41,6 +43,10 @@ export class CourseAggregate {
 		return this._members;
 	}
 
+	public get studentCount() {
+		return this._studentCount;
+	}
+
 	private constructor(props: CourseProps, members: MemberEntity[]) {
 		this.id = props.id;
 		this.createdAt = props.createdAt;
@@ -51,6 +57,7 @@ export class CourseAggregate {
 		this._updatedAt = props.updatedAt;
 
 		this._members = members;
+		this._studentCount = this._members.filter((m) => m.role.value === 'student').length; // 初始化時計算一次
 	}
 
 	public static create(
@@ -74,14 +81,29 @@ export class CourseAggregate {
 
 	public async addMember({
 		userId,
-		role
+		roles
 	}: {
 		userId: UserId;
-		role: MemberRole;
+		roles: MemberRoleType[];
 	}): Promise<{ memberId: string }> {
-		const member = MemberEntity.create({ userId, role });
+		if (roles.length !== 1) {
+			throw new Error('course member must have exactly one role');
+		}
+		if (this.studentCount >= this._studentCountRange.value.max) {
+			throw new Error('course has reached maximum student count');
+		}
+		if (this._members.find((m) => m.userId.value === userId.value)) {
+			throw new Error('user is already a member of the course');
+		}
+		const member = MemberEntity.create({ userId, role: MemberRole.create(roles[0]) });
 		this._members.push(member);
 		this._updatedAt = UpdatedAt.create(Date.now());
+
+		// 新增學生要同步加
+		if (roles[0] === 'student') {
+			this._studentCount++;
+		}
+
 		return {
 			memberId: member.id.value
 		};
