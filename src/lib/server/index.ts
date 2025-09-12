@@ -3,6 +3,7 @@ import { CourseQueryService } from './online-course/application/course.qs';
 import type { CourseAggregate } from './online-course/domain/course.ag';
 import { MockCourseQueryRepository } from './online-course/infrastructure/mock-course.qr';
 import { MockCourseUnitOfWork } from './online-course/infrastructure/mock-course.uow';
+import { UserSystemAntiCorruptionLayerAdapter } from './online-course/infrastructure/user-system.acl.ad';
 import { UserCommandService } from './user-system/application/user.cs';
 import { UserQueryService } from './user-system/application/user.qs';
 import { UserAggregate } from './user-system/domain/user.ag';
@@ -82,10 +83,12 @@ async function __course__() {
 	try {
 		// to be implemented
 		const courseData = new Map();
+		const userSystemAdapter = new UserSystemAntiCorruptionLayerAdapter();
+		
 		const mockCourseQr = new MockCourseQueryRepository(courseData);
 		const mockCourseUow = new MockCourseUnitOfWork(mockCourseQr, courseData);
 		const courseQs = new CourseQueryService(mockCourseUow);
-		const courseCs = new CourseCommandService(mockCourseUow);
+		const courseCs = new CourseCommandService(mockCourseUow, userSystemAdapter);
 		let findCourse: CourseAggregate | null = null;
 		const create_course_1_result = await courseCs.createCourse({
 			name: 'course1',
@@ -132,12 +135,6 @@ export async function __main__() {
 		if (!find_one_user_result || !find_one_course_result) {
 			throw new Error('No user or course found for enrollment');
 		}
-
-		
-
-
-
-
 	} catch (error) {
 		console.error('*'.repeat(100) + '\n' + 'Error occurred :', error);
 	}

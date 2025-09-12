@@ -9,7 +9,7 @@ export class MemberId {
 }
 
 const memberRoleSchema = z.enum(['student', 'teacher', 'admin']);
-type MemberRoleType = z.infer<typeof memberRoleSchema>;
+export type MemberRoleType = z.infer<typeof memberRoleSchema>;
 export class MemberRole {
 	private static readonly schema = memberRoleSchema;
 	public constructor(public readonly value: MemberRoleType) {}
