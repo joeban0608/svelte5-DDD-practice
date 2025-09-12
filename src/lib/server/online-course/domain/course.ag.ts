@@ -1,4 +1,4 @@
-import { CreatedAt, UpdatedAt } from '$lib/server/_share/share.vo';
+import { CreatedAt, UpdatedAt } from '$lib/server/_share/domain/share.vo';
 import { CourseId, CourseName, CourseDescription, CourseStudentCountRange } from './course.vo';
 import { MemberEntity } from './member.en';
 
@@ -75,8 +75,8 @@ export class CourseAggregate {
 		this._updatedAt = UpdatedAt.create(Date.now());
 	}
 
-	public removeMember(memberId: string) {
-		this._members = this._members.filter((m) => m.id.value !== memberId);
+	public removeMember(member: MemberEntity) {
+		this._members = this._members.filter((m) => m !== member);
 		this._updatedAt = UpdatedAt.create(Date.now());
 	}
 

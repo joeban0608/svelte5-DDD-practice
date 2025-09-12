@@ -25,7 +25,7 @@ export class UserEmail {
 }
 
 export class UserHashedPassword {
-	private static readonly schema = z.string().min(60).max(60);
+	private static readonly schema = z.string().min(64).max(64);
 	public constructor(public readonly value: string) {}
 	public static create(value: string): UserHashedPassword {
 		return new UserHashedPassword(this.schema.parse(value));

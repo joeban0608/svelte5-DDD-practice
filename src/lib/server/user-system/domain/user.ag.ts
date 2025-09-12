@@ -1,4 +1,4 @@
-import { CreatedAt, UpdatedAt } from '$lib/server/_share/share.vo';
+import { CreatedAt, UpdatedAt } from '$lib/server/_share/domain/share.vo';
 import { UserId, UserEmail, UserHashedPassword, UserName, UserPermission } from './user.vo';
 
 export type UserProps = {
@@ -50,13 +50,17 @@ export class UserAggregate {
 		this._permissions = props.permissions;
 	}
 
-	public static create(
-		props: Omit<UserProps, 'id' | 'createdAt' | 'updatedAt' | 'permissions'>
-	): UserAggregate {
+	public static async create(
+		props: Omit<UserProps, 'id' | 'createdAt' | 'updatedAt' | 'permissions' | 'hashedPassword'> & {
+			plainPassword: string;
+		}
+	): Promise<UserAggregate> {
 		const now = Date.now();
+		const hashed = await this.hashPassword(props.plainPassword);
 		return new UserAggregate({
 			...props,
 			id: UserId.create(crypto.randomUUID()),
+			hashedPassword: UserHashedPassword.create(hashed),
 			createdAt: CreatedAt.create(now),
 			updatedAt: UpdatedAt.create(now),
 			permissions: [] // default permission
@@ -67,17 +71,39 @@ export class UserAggregate {
 		return new UserAggregate(primitive);
 	}
 
-	// 新增權限（如 course:student）
-	public addPermission(permission: UserPermission) {
-		if (!this._permissions.some((p) => p.value === permission.value)) {
-			this._permissions.push(permission);
-			this._updatedAt = UpdatedAt.create(Date.now());
-		}
+	private static async hashPassword(plainPassword: string): Promise<string> {
+		const encoder = new TextEncoder();
+		const data = encoder.encode(plainPassword);
+		const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+		const hashArray = Array.from(new Uint8Array(hashBuffer));
+		// 轉成 hex 字串
+		return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 	}
+	private static async verifyPassword(plainPassword: string, hashed: string): Promise<boolean> {
+		const hashToCompare = await this.hashPassword(plainPassword);
+		return hashed === hashToCompare;
+	}
+	// 更新使用者密碼
+	public async updatedPassword({
+		oldPassword,
+		newPassword
+	}: {
+		oldPassword: string;
+		newPassword: string;
+	}) {
+		if (!oldPassword || !newPassword) {
+			throw new Error('Old password and new password are required');
+		}
 
-	// 移除權限
-	public removePermission(permission: UserPermission) {
-		this._permissions = this._permissions.filter((p) => p.value !== permission.value);
+		const isOldPasswordValid = await UserAggregate.verifyPassword(
+			oldPassword,
+			this.hashedPassword.value
+		);
+		if (!isOldPasswordValid) {
+			throw new Error('Old password is incorrect');
+		}
+		const newHashedPassword = await UserAggregate.hashPassword(newPassword);
+		this._hashedPassword = UserHashedPassword.create(newHashedPassword);
 		this._updatedAt = UpdatedAt.create(Date.now());
 	}
 
@@ -93,9 +119,17 @@ export class UserAggregate {
 		this._updatedAt = UpdatedAt.create(Date.now());
 	}
 
-	// 更新使用者密碼
-	public updateHashedPassword(hashedPassword: UserHashedPassword) {
-		this._hashedPassword = hashedPassword;
+	// 新增權限（如 course:student）
+	public addPermission(permission: UserPermission) {
+		if (!this._permissions.some((p) => p.value === permission.value)) {
+			this._permissions.push(permission);
+			this._updatedAt = UpdatedAt.create(Date.now());
+		}
+	}
+
+	// 移除權限
+	public removePermission(permission: UserPermission) {
+		this._permissions = this._permissions.filter((p) => p.value !== permission.value);
 		this._updatedAt = UpdatedAt.create(Date.now());
 	}
 }
