@@ -18,7 +18,7 @@ export class MemberEntity {
 		this.role = props.role;
 	}
 
-	public static create(props: Omit<MemberProps, 'id'>): MemberEntity {
+	public static async create(props: Omit<MemberProps, 'id'>): Promise<MemberEntity> {
 		return new MemberEntity({
 			...props,
 			id: MemberId.create(crypto.randomUUID())
