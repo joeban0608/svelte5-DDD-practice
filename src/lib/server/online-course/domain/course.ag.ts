@@ -70,28 +70,28 @@ export class CourseAggregate {
 		return new CourseAggregate(primitive, members);
 	}
 
-	public addMember(member: MemberEntity) {
-		this._members.push(member);
-		this._updatedAt = UpdatedAt.create(Date.now());
-	}
+	// public addMember(member: MemberEntity) {
+	// 	this._members.push(member);
+	// 	this._updatedAt = UpdatedAt.create(Date.now());
+	// }
 
-	public removeMember(member: MemberEntity) {
-		this._members = this._members.filter((m) => m !== member);
-		this._updatedAt = UpdatedAt.create(Date.now());
-	}
+	// public removeMember(member: MemberEntity) {
+	// 	this._members = this._members.filter((m) => m !== member);
+	// 	this._updatedAt = UpdatedAt.create(Date.now());
+	// }
 
-	public changeName(name: CourseName) {
-		this._name = name;
-		this._updatedAt = UpdatedAt.create(Date.now());
-	}
+	// public changeName(name: CourseName) {
+	// 	this._name = name;
+	// 	this._updatedAt = UpdatedAt.create(Date.now());
+	// }
 
-	public changeDescription(description: CourseDescription) {
-		this._description = description;
-		this._updatedAt = UpdatedAt.create(Date.now());
-	}
+	// public changeDescription(description: CourseDescription) {
+	// 	this._description = description;
+	// 	this._updatedAt = UpdatedAt.create(Date.now());
+	// }
 
-	public changeStudentCountRange(range: CourseStudentCountRange) {
-		this._studentCountRange = range;
-		this._updatedAt = UpdatedAt.create(Date.now());
-	}
+	// public changeStudentCountRange(range: CourseStudentCountRange) {
+	// 	this._studentCountRange = range;
+	// 	this._updatedAt = UpdatedAt.create(Date.now());
+	// }
 }
